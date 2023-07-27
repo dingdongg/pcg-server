@@ -1,7 +1,7 @@
 #!/bin/bash
 SECONDS=0
 
-cd $HOME/pcg-server
+cd $HOME/dev/pcg-server
 
 msg () {
     echo -e "$1\n--------------------\n"
@@ -27,4 +27,5 @@ duration=$SECONDS
 echo
 msg "Deploy finished in $(($duration % 60)) seconds"
 msg "Press Enter to exit"
+deactivate
 read
