@@ -8,7 +8,7 @@ msg () {
 }
 
 msg "Stopping app"
-sudo pkill pcg-server
+sudo kill -HUP `ps -C gunicorn fch -o pid | head -n 1`
 
 msg "Pulling from GitHub"
 git pull
