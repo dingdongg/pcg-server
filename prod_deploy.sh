@@ -13,9 +13,6 @@ sudo kill -HUP `ps -C gunicorn fch -o pid | head -n 1`
 msg "Pulling from GitHub"
 git pull
 
-msg "Entering python virtualenv"
-. .venv/bin/activate
-
 msg "Installing dependencies"
 pip install -r requirements.txt
 
