@@ -3,6 +3,10 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 
+@app.get("/")
+def bruh():
+    return "index page /!"
+
 @app.get("/hello")
 def hello():
     return "hello world"
