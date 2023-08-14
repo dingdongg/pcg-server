@@ -7,17 +7,23 @@ msg () {
     echo -e "$1\n--------------------\n"
 }
 
-msg "Stopping app"
-sudo kill -HUP `ps -C gunicorn fch -o pid | head -n 1`
-
 msg "Pulling from GitHub"
 git pull
 
-msg "Installing dependencies"
-pip install -r requirements.txt
+msg "Stopping container..."
+sudo docker stop pgs-container
 
-msg "Starting server in the background"
-gunicorn -w 2 "app:app" --daemon
+msg "Removing container..."
+sudo docker rm pgs-container
+
+msg "Removing image..."
+sudo docker rmi pgs
+
+msg "Re-building image..."
+sudo docker build --tag pgs .
+
+msg "Running container..."
+sudo docker run -d -p 9000:9000 --name pgs-container pgs
 
 duration=$SECONDS
 
