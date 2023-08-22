@@ -30,5 +30,4 @@ duration=$SECONDS
 echo
 msg "Deploy finished in $(($duration % 60)) seconds"
 msg "Press Enter to exit"
-deactivate
 read
