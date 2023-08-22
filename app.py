@@ -1,11 +1,15 @@
 from flask import Flask
+from db.db import run
+import asyncio
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 
 @app.get("/")
 def bruh():
-    return "index page /!"
+    res = asyncio.run(run())
+    dto = list(map(lambda r: dict(r), res))
+    return dto
 
 @app.get("/hello")
 def hello():
