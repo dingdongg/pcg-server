@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from db.db import run
 import asyncio
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -14,6 +14,12 @@ def bruh():
 @app.get("/hello")
 def hello():
     return "hello world"
+
+@app.get("/map")
+def get_map():
+    dungeon_maps = asyncio.run(run())
+    dto = list(map(lambda m: dict(m), dungeon_maps))
+    return dto
 
 app.wsgi_app = ProxyFix(
     app.wsgi_app, 
