@@ -1,30 +1,17 @@
-from flask import Flask, request
-from db.db import run
-import asyncio
-from werkzeug.middleware.proxy_fix import ProxyFix
+from pydantic
+from litestar import Litestar, get
 
-app = Flask(__name__)
+@get("/")
+async def index() -> str:
+    return "HELLO WORLD"
 
-@app.get("/")
-def bruh():
-    res = asyncio.run(run())
-    dto = list(map(lambda r: dict(r), res))
-    return dto
+@get("/books/{book_id:int}")
+async def get_book(book_id: int) -> dict[str, int]:
+    return {
+        "book_id": book_id
+    }
 
-@app.get("/hello")
-def hello():
-    return "hello world"
-
-@app.get("/map")
-def get_map():
-    dungeon_maps = asyncio.run(run())
-    dto = list(map(lambda m: dict(m), dungeon_maps))
-    return dto
-
-app.wsgi_app = ProxyFix(
-    app.wsgi_app, 
-    x_for=1, 
-    x_proto=1, 
-    x_host=1, 
-    x_prefix=1,
-)
+app = Litestar([
+    index,
+    get_book,
+])
