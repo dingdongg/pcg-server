@@ -1,19 +1,19 @@
-from contextlib import asynccontextmanager
-
 from litestar import Litestar, get, post, put
-from litestar.contrib.sqlalchemy.plugins import SQLAlchemySerializationPlugin
+from litestar.contrib.sqlalchemy.plugins import (
+    SQLAlchemySerializationPlugin,
+    SQLAlchemyAsyncConfig,
+    SQLAlchemyInitPlugin,
+)
 from litestar.exceptions import NotFoundException, ClientException
 from litestar.datastructures import State
 from litestar.status_codes import HTTP_409_CONFLICT
 from litestar.static_files.config import StaticFilesConfig
 
-from typing import Any
-
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound, IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
@@ -25,32 +25,15 @@ class TodoItem(Base):
     title: Mapped[str] = mapped_column(primary_key=True)
     done: Mapped[bool]
 
-@asynccontextmanager
-async def db_connection(app: Litestar) -> AsyncGenerator[None, None]:
-    engine = getattr(app.state, "engine", None)
-    if engine is None:
-        engine = create_async_engine("postgresql+asyncpg://postgres:pokemon123@localhost:5432/postgres")
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all) # create tables if not exists
-        app.state.engine = engine
-    
-    try: yield
-    finally: await engine.dispose()
-
-# a "session" (sync or async) represents one logical database transaction.
-# they are not thread-safe so one instance should only be used per one DB operation
-sessionmaker = async_sessionmaker(expire_on_commit=False)
-
-async def provide_transaction(state: State) -> AsyncGenerator[AsyncSession, None]:
-    async with sessionmaker(bind=state.engine) as session:
-        try:
-            async with session.begin():
-                yield session
-        except IntegrityError as exc:
-            raise ClientException(
-                status_code=HTTP_409_CONFLICT,
-                detail=str(exc),
-            ) from exc
+async def provide_transaction(db_session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
+    try:
+        async with db_session.begin():
+            yield db_session
+    except IntegrityError as exc:
+        raise ClientException(
+            status_code=HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
 
 async def get_todo_by_title(todo_name: str, session: AsyncSession) -> TodoItem:
     query = select(TodoItem).where(TodoItem.title == todo_name)
@@ -69,6 +52,7 @@ async def get_todo_list(done: bool | None, session: AsyncSession) -> list[TodoIt
 
 @get("/")
 async def get_list(transaction: AsyncSession, done: bool | None = None) -> list[TodoItem]:
+    print("HASH:", transaction.__hash__())
     return await get_todo_list(done, transaction)
     
 @post("/")
@@ -85,15 +69,19 @@ async def update_item(item_title: str, data: TodoItem, transaction: AsyncSession
     
     return todo_item
 
+# DB configuration
+db_config = SQLAlchemyAsyncConfig(connection_string="postgresql+asyncpg://postgres:pokemon123@localhost:5432/postgres")
+
 # Litestar app args
 route_handlers = [get_list, add_item, update_item]
-lifespan = [ db_connection]
 static_files_config = [StaticFilesConfig(directories=["assets"], path="/favicon.ico")]
-plugins = [SQLAlchemySerializationPlugin()]
+plugins = [
+    SQLAlchemySerializationPlugin(), # de/serialize out/ingoing payloads
+    SQLAlchemyInitPlugin(db_config), # configures and manages the DB engine and request-level sessions
+]
 
 app = Litestar(
     route_handlers, 
-    lifespan=lifespan, 
     static_files_config=static_files_config,
     dependencies={ "transaction": provide_transaction }, # use dependency injection to create transactions beforehand
     plugins=plugins,
