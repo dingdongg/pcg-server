@@ -1,8 +1,7 @@
 from litestar import Litestar, get, post, put
 from litestar.contrib.sqlalchemy.plugins import (
-    SQLAlchemySerializationPlugin,
+    SQLAlchemyPlugin,
     SQLAlchemyAsyncConfig,
-    SQLAlchemyInitPlugin,
 )
 from litestar.exceptions import NotFoundException, ClientException
 from litestar.datastructures import State
@@ -75,10 +74,7 @@ db_config = SQLAlchemyAsyncConfig(connection_string="postgresql+asyncpg://postgr
 # Litestar app args
 route_handlers = [get_list, add_item, update_item]
 static_files_config = [StaticFilesConfig(directories=["assets"], path="/favicon.ico")]
-plugins = [
-    SQLAlchemySerializationPlugin(), # de/serialize out/ingoing payloads
-    SQLAlchemyInitPlugin(db_config), # configures and manages the DB engine and request-level sessions
-]
+plugins = [SQLAlchemyPlugin(db_config)]
 
 app = Litestar(
     route_handlers, 
