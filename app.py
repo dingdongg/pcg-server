@@ -33,14 +33,14 @@ async def db_connection(app: Litestar) -> AsyncGenerator[None, None]:
     if engine is None:
         engine = create_async_engine("postgresql+asyncpg://postgres:pokemon123@localhost:5432/postgres")
         async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(Base.metadata.create_all) # create tables if not exists
         app.state.engine = engine
     
     try: yield
     finally: await engine.dispose()
 
 # a "session" (sync or async) represents one logical database transaction.
-# they are not thread-safe so one instance should only be used within one DB operation
+# they are not thread-safe so one instance should only be used per one DB operation
 sessionmaker = async_sessionmaker(expire_on_commit=False)
 
 def serialize_todos(todo: TodoItem) -> TodoType:
@@ -92,7 +92,9 @@ async def update_item(item_title: str, data: TodoType, state: State) -> TodoType
     
     return serialize_todos(todo_item)
 
+# Litestar app args
 route_handlers = [get_list, add_item, update_item]
+lifespan = [ db_connection]
 static_files_config = [StaticFilesConfig(directories=["assets"], path="/favicon.ico")]
 
-app = Litestar(route_handlers, lifespan=[ db_connection ], static_files_config=static_files_config)
+app = Litestar(route_handlers, lifespan=lifespan, static_files_config=static_files_config)
