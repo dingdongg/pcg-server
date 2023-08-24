@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from litestar import Litestar, get, post, put
+from litestar.contrib.sqlalchemy.plugins import SQLAlchemySerializationPlugin
 from litestar.exceptions import NotFoundException, ClientException
 from litestar.datastructures import State
 from litestar.status_codes import HTTP_409_CONFLICT
@@ -14,9 +15,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-TodoType = dict[str, Any]
-TodoCollectionType = list[TodoType]
 
 class Base(DeclarativeBase):
     ...
@@ -54,12 +52,6 @@ async def provide_transaction(state: State) -> AsyncGenerator[AsyncSession, None
                 detail=str(exc),
             ) from exc
 
-def serialize_todos(todo: TodoItem) -> TodoType:
-    return {
-        "title": todo.title,
-        "done": todo.done,
-    }
-
 async def get_todo_by_title(todo_name: str, session: AsyncSession) -> TodoItem:
     query = select(TodoItem).where(TodoItem.title == todo_name)
     result = await session.execute(query)
@@ -76,32 +68,33 @@ async def get_todo_list(done: bool | None, session: AsyncSession) -> list[TodoIt
     return result.scalars().all()
 
 @get("/")
-async def get_list(transaction: AsyncSession, done: bool | None = None) -> TodoCollectionType:
-    return [serialize_todos(todo) for todo in await get_todo_list(done, transaction)]
+async def get_list(transaction: AsyncSession, done: bool | None = None) -> list[TodoItem]:
+    return await get_todo_list(done, transaction)
     
 @post("/")
-async def add_item(data: TodoType, transaction: AsyncSession) -> TodoType:
-    new_todo = TodoItem(title=data["title"], done=data["done"])
-    transaction.add(new_todo)
-    
-    return serialize_todos(new_todo)
+async def add_item(data: TodoItem, transaction: AsyncSession) -> TodoItem:
+    transaction.add(data)
+
+    return data
 
 @put("/{item_title:str}")
-async def update_item(item_title: str, data: TodoType, transaction: AsyncSession) -> TodoType:
+async def update_item(item_title: str, data: TodoItem, transaction: AsyncSession) -> TodoItem:
     todo_item = await get_todo_by_title(item_title, transaction)
-    todo_item.title = data["title"]
-    todo_item.done = data["done"]
+    todo_item.title = data.title
+    todo_item.done = data.done
     
-    return serialize_todos(todo_item)
+    return todo_item
 
 # Litestar app args
 route_handlers = [get_list, add_item, update_item]
 lifespan = [ db_connection]
 static_files_config = [StaticFilesConfig(directories=["assets"], path="/favicon.ico")]
+plugins = [SQLAlchemySerializationPlugin()]
 
 app = Litestar(
     route_handlers, 
     lifespan=lifespan, 
     static_files_config=static_files_config,
     dependencies={ "transaction": provide_transaction }, # use dependency injection to create transactions beforehand
+    plugins=plugins,
 )
