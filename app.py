@@ -51,7 +51,6 @@ async def get_todo_list(done: bool | None, session: AsyncSession) -> list[TodoIt
 
 @get("/")
 async def get_list(transaction: AsyncSession, done: bool | None = None) -> list[TodoItem]:
-    print("HASH:", transaction.__hash__())
     return await get_todo_list(done, transaction)
     
 @post("/")
@@ -69,7 +68,7 @@ async def update_item(item_title: str, data: TodoItem, transaction: AsyncSession
     return todo_item
 
 # DB configuration
-db_config = SQLAlchemyAsyncConfig(connection_string="postgresql+asyncpg://postgres:pokemon123@localhost:5432/postgres")
+db_config = SQLAlchemyAsyncConfig(connection_string="postgresql+asyncpg://postgres:pokemon123@postgres:5432/postgres")
 
 # Litestar app args
 route_handlers = [get_list, add_item, update_item]
