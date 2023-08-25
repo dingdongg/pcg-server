@@ -1,0 +1,36 @@
+volumes:
+  pcg-server-volume: {}
+
+secrets:
+  db_username:
+    file: db_uname.txt
+  db_password:
+    file: db_password.txt
+  db_db:
+    file: db.txt
+
+services:
+  postgres-db:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_USER_FILE: /run/secrets/db_username
+      POSTGRES_DB_FILE: /run/secrets/db_db
+    ports: 
+      - "5432:5432"
+    secrets:
+      - db_password
+      - db_username
+      - db_db
+    volumes:
+      - pcg-server-volume:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  api:
+    build: .
+    depends_on:
+      - postgres-db
+    ports:
+      - "9000:9000"
+    
+
+  
