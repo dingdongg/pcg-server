@@ -68,7 +68,7 @@ async def update_item(item_title: str, data: TodoItem, transaction: AsyncSession
     return todo_item
 
 # DB configuration
-db_config = SQLAlchemyAsyncConfig(connection_string="postgresql+asyncpg://postgres:pokemon123@postgres:5432/postgres")
+db_config = SQLAlchemyAsyncConfig(connection_string="postgresql+asyncpg://postgres:pokemon123@postgres-db:5432/postgres")
 
 # Litestar app args
 route_handlers = [get_list, add_item, update_item]

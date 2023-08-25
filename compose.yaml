@@ -10,7 +10,7 @@ secrets:
     file: db.txt
 
 services:
-  postgres:
+  postgres-db:
     image: "postgres:latest"
     environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
@@ -32,7 +32,7 @@ services:
   api:
     build: .
     depends_on:
-      postgres:
+      postgres-db:
         condition: service_healthy
     ports:
       - "9000:9000"
