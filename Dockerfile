@@ -2,6 +2,7 @@ FROM python:3.10-alpine
 WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
+EXPOSE 9000
 COPY . .
 
 # 0.0.0.0 is needed, because I don't know which IP address
