@@ -18,6 +18,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 class Base(DeclarativeBase):
     ...
 
+# WARNING: Table names are case-sensitive
+
 class TodoItem(Base):
     __tablename__ = "TodoItems"
 
