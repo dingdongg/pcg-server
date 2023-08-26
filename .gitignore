@@ -3,6 +3,7 @@ __pycache__/
 build/
 dist/
 pcg_server.egg-info/
+secrets/
 
 # browser always makes requests to GET /favicon.ico, 
 # which makes uvicorn complain. I added an assets/
