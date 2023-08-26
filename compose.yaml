@@ -3,11 +3,11 @@ volumes:
 
 secrets:
   db_username:
-    file: db_uname.txt
+    file: secrets/db_uname.txt
   db_password:
-    file: db_password.txt
+    file: secrets/db_password.txt
   db_db:
-    file: db.txt
+    file: secrets/db.txt
 
 services:
   postgres-db:
