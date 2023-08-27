@@ -3,3 +3,9 @@ __pycache__/
 build/
 dist/
 pcg_server.egg-info/
+
+# browser always makes requests to GET /favicon.ico, 
+# which makes uvicorn complain. I added an assets/
+# folder with a dummy favicon file to serve these requests,
+# but I don't want it in version control so I am ignoring it
+assets/ 
