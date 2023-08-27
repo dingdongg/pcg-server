@@ -1,0 +1,41 @@
+volumes:
+  pcg-server-volume: {}
+
+secrets:
+  db_username:
+    file: secrets/db_uname.txt
+  db_password:
+    file: secrets/db_password.txt
+  db_db:
+    file: secrets/db.txt
+
+services:
+  postgres-db:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_USER_FILE: /run/secrets/db_username
+      POSTGRES_DB_FILE: /run/secrets/db_db
+      PGUSER: postgres # to prevent healthchecks via "root" user
+    secrets:
+      - db_password
+      - db_username
+      - db_db
+    volumes:
+      - pcg-server-volume:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "postgres"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+  api:
+    build: .
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+    
+
+  

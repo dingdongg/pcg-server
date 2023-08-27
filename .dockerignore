@@ -1,0 +1,13 @@
+secrets/
+README.md
+*.sh
+init.sql
+assets/
+
+.git/
+.gitignore
+__pycache__/
+.venv/
+build/
+dist/
+pcg_server.egg-info/
